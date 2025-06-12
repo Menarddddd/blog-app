@@ -1,10 +1,12 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .database import get_db
-from .schemas import CreateUser, Token
-from .models import User
+from .schemas import CreatePost, CreateUser, HomeResponse, Token
+from .models import Post, User
 from . import services
+from datetime import datetime, timezone
 from .hashing import get_hash_password, verify_password
 from .oauth import create_access_token, get_current_user
 
@@ -53,6 +55,29 @@ def create_account(registerData: CreateUser, db: Session = Depends(get_db)):
     return f"User {registerData.username} has been created!"
 
 
-@route.get("/home", status_code=status.HTTP_200_OK)
+@route.get("/home", status_code=status.HTTP_200_OK, response_model=List[HomeResponse])
 def home(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
-    return "Home page!"
+    posts = db.query(Post).all()
+    return [
+        {
+            "username": post.author.username,
+            "id": post.id,
+            "caption": post.caption,
+            "body": post.body,
+            "date_created": post.date_created
+        }
+        for post in posts
+    ] 
+
+
+@route.post("/create_post", status_code=status.HTTP_201_CREATED)
+def create_post(postData: CreatePost, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    post = Post(
+        caption = postData.caption,
+        body = postData.body,
+        date_created = datetime.now(timezone.utc).replace(second=0, microsecond=0),
+        user_id = current_user.id
+    )
+    db.add(post)    
+    db.commit()
+    return "Post has been created"
