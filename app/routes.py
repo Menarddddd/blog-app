@@ -1,17 +1,28 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .database import get_db
-from .schemas import CreateUser
+from .schemas import CreateUser, Token
 from .models import User
 from . import services
-from .hashing import get_hash_password
+from .hashing import get_hash_password, verify_password
+from .oauth import create_access_token
 
 
 route = APIRouter()
 
-@route.get("/token")
-def login_token():
-    return "Token!"
+@route.post("/token", response_model=Token, status_code=status.HTTP_200_OK)
+def login_token(loginData: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.username == loginData.username).first()
+    if not user:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is not found")
+    auth_pwd = verify_password(loginData.password, user.password)
+    if not auth_pwd:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Password is incorrect")
+    
+    access_token = create_access_token(data={"sub": loginData.username})
+
+    return {"access_token": access_token, "token_type": "bearer"}
 
 
 @route.post("/register", status_code=status.HTTP_201_CREATED)
