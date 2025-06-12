@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .database import get_db
-from .schemas import CreatePost, CreateUser, HomeResponse, Token
+from .schemas import CreatePost, CreateUser, HomeResponse, ProfileResponse, Token
 from .models import Post, User
 from . import services
 from datetime import datetime, timezone
@@ -70,6 +70,19 @@ def home(db: Session = Depends(get_db), current_user = Depends(get_current_user)
     ] 
 
 
+@route.get("/profile", status_code=status.HTTP_200_OK, response_model=List[ProfileResponse])
+def profile(db: Session = Depends(get_db), current_user = Depends(get_current_user)):
+    all_post: List = []
+
+    posts = db.query(Post).all()
+    for post in posts:
+        if post.user_id == current_user.id:
+            all_post.append(post)
+
+    return all_post
+
+
+
 @route.post("/create_post", status_code=status.HTTP_201_CREATED)
 def create_post(postData: CreatePost, db: Session = Depends(get_db), current_user = Depends(get_current_user)):
     post = Post(
@@ -81,3 +94,5 @@ def create_post(postData: CreatePost, db: Session = Depends(get_db), current_use
     db.add(post)    
     db.commit()
     return "Post has been created"
+
+

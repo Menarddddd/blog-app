@@ -27,7 +27,14 @@ class CreatePost(BaseModel):
 
 class HomeResponse(BaseModel):
     username: str
-    id: int
+    caption: str
+    body: str
+    date_created: datetime
+
+    model_config = { "from_attributes": True}
+
+
+class ProfileResponse(BaseModel):
     caption: str
     body: str
     date_created: datetime
