@@ -27,7 +27,7 @@ class CreatePost(BaseModel):
 
 class HomeResponse(BaseModel):
     username: str
-    caption: str
+    caption: Optional[str] = None
     body: str
     date_created: datetime
 
@@ -35,8 +35,16 @@ class HomeResponse(BaseModel):
 
 
 class ProfileResponse(BaseModel):
-    caption: str
+    id: int
+    caption: Optional[str] = None
     body: str
     date_created: datetime
 
     model_config = { "from_attributes": True}
+
+
+class UpdatePost(BaseModel):
+    caption: Optional[str] = None
+    body: Optional[str] = None
+
+

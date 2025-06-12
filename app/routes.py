@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from .database import get_db
-from .schemas import CreatePost, CreateUser, HomeResponse, ProfileResponse, Token
+from .schemas import CreatePost, CreateUser, HomeResponse, ProfileResponse, Token, UpdatePost
 from .models import Post, User
 from . import services
 from datetime import datetime, timezone
@@ -95,4 +95,21 @@ def create_post(postData: CreatePost, db: Session = Depends(get_db), current_use
     db.commit()
     return "Post has been created"
 
+
+
+@route.put("/update_post/{id}", status_code=status.HTTP_200_OK, response_model=ProfileResponse)
+def update_post(id: int, updateData: UpdatePost, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    post = db.query(Post).filter(Post.id == id).first()
+    if post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post is not found")
+    if post.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="That post is not yours for you to update")
+
+    newUpdatedData = updateData.model_dump(exclude_unset=True)
+    for key, value in newUpdatedData.items():
+        setattr(post, key, value)
+
+    db.commit()
+    db.refresh(post)
+    return post
 
