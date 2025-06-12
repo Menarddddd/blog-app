@@ -113,3 +113,14 @@ def update_post(id: int, updateData: UpdatePost, db: Session = Depends(get_db), 
     db.refresh(post)
     return post
 
+@route.delete("/delete_post/{id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_post(id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    post = db.query(Post).filter(Post.id == id).first()
+    if post is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post is not found")
+    if post.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="That post is not yours for you to delete")
+
+    db.delete(post)
+    db.commit()
+
