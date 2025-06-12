@@ -107,7 +107,7 @@ def update_post(id: int, updateData: UpdatePost, db: Session = Depends(get_db), 
 
     newUpdatedData = updateData.model_dump(exclude_unset=True)
     for key, value in newUpdatedData.items():
-        setattr(post, key, value)
+        setattr(post, key, value)   
 
     db.commit()
     db.refresh(post)
